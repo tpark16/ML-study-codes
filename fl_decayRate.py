@@ -22,17 +22,27 @@ register(
 env = gym.make('FrozenLake-v3')
 
 Q = np.zeros([env.observation_space.n, env.action_space.n])
+
+dis = 0.99
 num_episodes = 2000
 rList = []
 for i in range(num_episodes):
     state = env.reset()
     rAll = 0
     done = False
-
+    e = 1.0 / ((i//100)+1)
     while not done:
-        action = rargmax(Q[state, :])
+        # Choose an action by greedily (with noise) picking from Q table
+        if np.random.rand(1) < e:
+            action = env.action_space.sample()
+        else:
+            action = np.argmax(Q[state, :])
+        # action = np.argmax(Q[state, :] + np.random.randn(1, env.action_space.n) / (i+1))
+        # Get new state and reward from environment
         new_state, reward, done, _ = env.step(action)
-        Q[state, action] = reward + np.max(Q[new_state, :])
+        # Update Q table with new knowledge using decay rate
+        Q[state, action] = reward + dis * np.max(Q[new_state, :])
+
         rAll += reward
         state = new_state
     rList.append(rAll)
@@ -42,5 +52,5 @@ print('Final Q-Table values')
 print('Left Down Right Up')
 print(Q)
 
-plt.bar(range(len(rList)), rList, color = 'blue')
+plt.bar(range(len(rList)), rList, color='blue')
 plt.show()
